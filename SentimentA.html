@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentiment Analysis Results</title>
+    <link rel="icon" href="static/images/QuantRabbit1.001.png" type="image/png">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@300&display=swap');
+
+        body {
+            font-family: 'Source Code Pro', monospace;
+            background-color: black;
+            color: white;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .quant-rabbit-img {
+            width: 270px;
+            border-radius: 30px;
+        }
+        #average-scores {
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            display: inline-block;
+            margin-top: 20px;
+            max-width: 800px;
+            max-height: 400px; /* Adjust as needed */
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 8px;
+            border: 1px solid #444;
+            text-align: left;
+        }
+        th {
+            background-color: #555;
+        }
+        td {
+            background-color: #333;
+        }
+        button {
+            background-color: #333;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-family: 'Source Code Pro', monospace;
+            margin: 10px;
+        }
+        button:hover {
+            background-color: #555;
+        }
+        .version {
+            font-size: 12px;
+            color: #888;
+            margin-top: -10px; 
+        }
+        #back-to-home {
+            display: none; 
+        }
+        #chart {
+            margin-top: 20px;
+        }
+        #sentiment-chart {
+            max-width: 600px;
+            height: auto;
+        }
+        #loading {
+            display: none;
+            font-size: 18px;
+            color: #aaa;
+        }
+        /* Modal styles */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1; 
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto; 
+            background-color: rgb(0,0,0); 
+            background-color: rgba(0,0,0,0.4); 
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: #333;
+            margin: 5% auto; 
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%; 
+            max-height: 80%;
+            overflow-y: auto;
+            border-radius: 10px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <img class="quant-rabbit-img" src="static/images/QuantRabbit1.jpg" alt="Quant Rabbit">
+    <h1>Sentiment Analysis Results</h1>
+    <p class="version">V1.0.0</p>
+    <button onclick="analyzeData()">Analyze Data</button>
+    <button id="load-data" onclick="fetchSentimentResults()" style="display: none;">Load Data</button>
+    <button id="back-to-home" onclick="goHome()">Back to Home</button>
+    <div id="loading">Loading...</div>
+    <div id="chart">
+        <img id="sentiment-chart" src="static/charts/sentiment_chart.png" alt="Sentiment Chart" style="display: none;">
+    </div>
+    <div id="average-scores"></div>
+
+    <!-- The Modal -->
+    <div id="resultsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2>Sentiment Results</h2>
+            <div id="results"></div>
+        </div>
+    </div>
+
+    <script>
+        async function analyzeData() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').innerHTML = '';
+            document.getElementById('average-scores').innerHTML = '';
+            document.getElementById('sentiment-chart').style.display = 'none';
+            document.getElementById('load-data').style.display = 'inline'; 
+
+            try {
+                // Fetch average compound scores
+                const responseAverages = await fetch('average_compound_scores.csv');
+                const csvDataAverages = await responseAverages.text();
+
+                const rowsAverages = csvDataAverages.trim().split('\n');
+                if (rowsAverages.length <= 1) {
+                    document.getElementById('average-scores').innerHTML = 'No average data found.';
+                } else {
+                    let outputAverages = '<table>';
+                    outputAverages += '<tr><th>Ticker</th><th>Average Compound Score</th></tr>';
+
+                    rowsAverages.forEach((row, index) => {
+                        if (index === 0) return;
+                        const cols = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+
+                        if (cols.length === 2) {
+                            outputAverages += `<tr>
+                                                <td>${cols[0]}</td>
+                                                <td>${cols[1]}</td>
+                                             </tr>`;
+                        } else {
+                            console.error('Unexpected row format:', row);
+                        }
+                    });
+
+                    outputAverages += '</table>';
+                    document.getElementById('average-scores').innerHTML = outputAverages;
+                }
+
+                document.getElementById('sentiment-chart').style.display = 'block'; 
+
+            } catch (error) {
+                console.error('Error analyzing data:', error);
+                document.getElementById('average-scores').innerHTML = 'Failed to load average data.';
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        async function fetchSentimentResults() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').innerHTML = '';
+
+            try {
+                const responseResults = await fetch('sentiment_results.csv');
+                const csvDataResults = await responseResults.text();
+                
+                const rowsResults = csvDataResults.trim().split('\n');
+                if (rowsResults.length <= 1) {
+                    document.getElementById('results').innerHTML = 'No data found.';
+                } else {
+                    let outputResults = '<table>';
+                    outputResults += '<tr><th>Ticker</th><th>Title</th><th>Compound Score</th></tr>';
+
+                    rowsResults.forEach((row, index) => {
+                        if (index === 0) return; 
+                        const cols = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); 
+
+                        if (cols.length === 3) {
+                            outputResults += `<tr>
+                                                <td>${cols[0]}</td>
+                                                <td>${cols[1].replace(/"/g, '')}</td>
+                                                <td>${cols[2]}</td>
+                                             </tr>`;
+                        } else {
+                            console.error('Unexpected row format:', row);
+                        }
+                    });
+
+                    outputResults += '</table>';
+                    document.getElementById('results').innerHTML = outputResults;
+                }
+
+                openModal(); // Open the modal after loading the data
+
+            } catch (error) {
+                console.error('Error fetching sentiment results:', error);
+                document.getElementById('results').innerHTML = 'Failed to load data.';
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function goHome() {
+            window.location.href = '/SentimentA.html'; 
+        }
+
+        function openModal() {
+            document.getElementById('resultsModal').style.display = 'block';
+        }
+
+        function closeModal() {
+            document.getElementById('resultsModal').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
+
