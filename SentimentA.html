@@ -127,9 +127,9 @@
     <img class="quant-rabbit-img" src="static/images/QuantRabbit1.jpg" alt="Quant Rabbit">
     <h1>Sentiment Analysis Results</h1>
     <p class="version">V1.0.0</p>
-    <button onclick="analyzeData()">Analyze Data</button>
+    <button id="analyze-button" onclick="analyzeData()">Analyze Data</button>
     <button id="load-data" onclick="fetchSentimentResults()" style="display: none;">Load Data</button>
-    <button id="back-to-home" onclick="goHome()">Back to Home</button>
+    <button id="back-to-home" onclick="goHome()" style="display: none;">Back to Home</button>
     <div id="loading">Loading...</div>
     <div id="chart">
         <img id="sentiment-chart" src="static/charts/sentiment_chart.png" alt="Sentiment Chart" style="display: none;">
@@ -152,6 +152,8 @@
             document.getElementById('average-scores').innerHTML = '';
             document.getElementById('sentiment-chart').style.display = 'none';
             document.getElementById('load-data').style.display = 'inline'; 
+            document.getElementById('analyze-button').style.display = 'none'; 
+            document.getElementById('back-to-home').style.display = 'inline'; 
 
             try {
                 // Fetch average compound scores
@@ -251,4 +253,3 @@
     </script>
 </body>
 </html>
-
